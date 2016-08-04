@@ -1,0 +1,16 @@
+{
+    "name": "lib-remote-analytics",
+    "version": "1.0.0",
+    "authors": [
+        "Lead-Web <info@lead-web.com>"
+    ],
+    "description": "Remote Analitycs Library",
+    "main": "main.js",
+    "title": "Remote Analitycs Library",
+    "keywords": ["util", "functional", "server", "client", "browser"],
+    "author": "Lead-Web <info@lead-web.com>",
+    "contributors": [],
+    "dependencies": {
+        "jquery": "^2.2.3"
+    }
+}
