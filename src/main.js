@@ -17,14 +17,42 @@ function RemoteAnalytics(config) {
     }, config);
 
     // Variables
+    /**
+     * Sessions data
+     */
     this.sessions = [];
+    /**
+     * API auth token
+     */
+    this.token = null;
 
     // Init
+    this.login();
     this.submissionStart();
 }
 !function () {
     'use strict';
 }(),
+    RemoteAnalytics.prototype.login = function () {
+        $.ajax({
+            url: this.apiUrl + '/login',
+            method: 'POST',
+            data: {
+                username: this.deviceId,
+                password: this.authKey
+            },
+            headers: {
+                'Content-Type': 'x-www-form-urlencoded'
+            },
+            success: function (response) {
+                this.token = response.token;
+            },
+            error: function (response) {
+                console.log('Invalid credentials')
+                console.log(response);
+            }
+        });
+    },
     RemoteAnalytics.prototype.logAction = function (name, value, extra) {
         if (this.sessions.length < 1) {
             this.submissionStart();
@@ -39,7 +67,6 @@ function RemoteAnalytics(config) {
     },
     RemoteAnalytics.prototype.submissionStart = function () {
         var session = {
-            'device': this.config.deviceId,
             'story': this.config.projectId,
             'start_time': Math.round(Date.now() / 1000),
             'end_time': 0,
@@ -57,13 +84,13 @@ function RemoteAnalytics(config) {
         this.sessions[this.sessions.length - 1].end_time = Math.round(Date.now() / 1000);
 
         $.ajax({
-            url: this.apiUrl,
+            url: this.apiUrl + '/devices/' + this.deviceId,
             method: 'POST',
             data: {
                 sessions: this.sessions
             },
             headers: {
-                'Authorization': this.config.authKey + ':' + this.config.projectId,
+                'Authorization': this.token,
                 'Content-Type': 'x-www-form-urlencoded'
             },
             success: function () {
