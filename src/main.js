@@ -40,7 +40,7 @@ function RemoteAnalytics(config) {
     RemoteAnalytics.prototype.submissionStart = function () {
         var session = {
             'device': this.config.deviceId,
-            'project': this.config.projectId,
+            'story': this.config.projectId,
             'start_time': Math.round(Date.now() / 1000),
             'end_time': 0,
             'actions': []
