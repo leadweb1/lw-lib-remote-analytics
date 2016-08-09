@@ -1,6 +1,12 @@
-function RemoteAnalytics(config) {
-    // Configuration
-    this.config = $.extend({
+'use strict';
+
+var RemoteAnalytics;
+
+RemoteAnalytics = {
+    /**
+     * Configuration object
+     */
+    config: {
         /**
          * API endpoint to post data to
          */
@@ -14,46 +20,132 @@ function RemoteAnalytics(config) {
          * Generated when creating an app in the backend
          */
         projectId: 'project-id'
-    }, config);
-
-    // Variables
+    },
     /**
      * Sessions data
      */
-    this.sessions = [];
+    sessions: [],
     /**
      * API auth token
      */
-    this.token = null;
+    token: null,
+    /**
+     * Initialize configuration
+     *
+     * @param config
+     */
+    init: function (config) {
+        //jQuery.extend(this.config, config);
+        for (var c in config) {
+            this.config[c] = config[c];
+        }
+    },
+    /**
+     * Send API request
+     * 
+     * @param object conf
+     * @returns void
+     */
+    apiRequest: function (conf) {
+        var request = new XMLHttpRequest;
 
-    // Init
-    this.login();
-    this.submissionStart();
-}
-!function () {
-    'use strict';
-}(),
-    RemoteAnalytics.prototype.login = function () {
-        $.ajax({
-            url: this.apiUrl + '/login',
-            method: 'POST',
-            data: {
-                username: this.deviceId,
-                password: this.authKey
-            },
+        // Handle response
+        request.onreadystatechange = function () {
+            if (4 === request.readyState) {
+                var res = JSON.parse(request.responseText);
+                var data = {};
+                switch (request.status) {
+                    case 200:
+                    {
+                        for (var attr in res) {
+                            data[attr] = res[attr];
+                        }
+                        break;
+                    }
+                    default:
+                    {
+                        data.error = res.error;
+                        break;
+                    }
+                }
+                ;
+                if (conf.callback !== undefined) {
+                    conf.callback(data);
+                }
+            }
+        };
+
+        // Create request
+        request.open(conf.method, conf.url);
+
+        // Set request headers
+        if (conf.headers !== undefined) {
+            for (var h in conf.headers) {
+                var header = conf.headers[h];
+                request.setRequestHeader(h, header);
+            }
+        }
+
+        // Serialize data
+        var data = '';
+        for (var d in conf.data) {
+            if (data.length > 0) {
+                data += '&';
+            }
+            data += d + '=' + conf.data[d];
+        }
+
+        // Send request
+        request.send(data);
+    },
+    /**
+     * 
+     * @returns JSON
+     */
+    getApiData: function (endpoint, callback) {
+        this.apiRequest({
+            url: this.config.apiUrl + '/' + endpoint,
+            method: 'GET',
             headers: {
-                'Content-Type': 'x-www-form-urlencoded'
+                'X-AUTH-TOKEN': this.token,
+                'Content-Type': 'application/json'
             },
-            success: function (response) {
-                this.token = response.token;
-            },
-            error: function (response) {
-                console.log('Invalid credentials')
-                console.log(response);
+            callback: function (response) {
+                callback(response);
             }
         });
     },
-    RemoteAnalytics.prototype.logAction = function (name, value, extra) {
+    /**
+     * Login
+     */
+    login: function (callback) {
+        this.apiRequest({
+            url: this.config.apiUrl + '/login',
+            method: 'POST',
+            data: {
+                username: this.config.deviceId,
+                password: this.config.authKey
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            callback: function (response) {
+                if (response.token !== undefined) {
+                    RemoteAnalytics.token = response.token;
+                }
+                callback(response);
+            }
+        });
+    },
+    /**
+     * Log session action
+     *
+     * @param name
+     * @param value
+     * @param extra
+     * @returns {Number}
+     */
+    logAction: function (name, value, extra) {
         if (this.sessions.length < 1) {
             this.submissionStart();
         }
@@ -65,7 +157,10 @@ function RemoteAnalytics(config) {
         };
         return this.sessions[this.sessions.length - 1].actions.push(action);
     },
-    RemoteAnalytics.prototype.submissionStart = function () {
+    /**
+     * Start submission session
+     */
+    submissionStart: function () {
         var session = {
             'story': this.config.projectId,
             'start_time': Math.round(Date.now() / 1000),
@@ -74,7 +169,15 @@ function RemoteAnalytics(config) {
         };
         this.sessions.push(session);
     },
-    RemoteAnalytics.prototype.submissionEnd = function (callbackNoSessions, callbackAfterPost) {
+    /**
+     * End submission session
+     *
+     * May span multiple app sessions
+     *
+     * @param callbackNoSessions
+     * @param callbackAfterPost
+     */
+    submissionEnd: function (callbackNoSessions, callbackAfterPost) {
         if (this.sessions.length < 1) {
             this.sessions = [];
             callbackNoSessions();
@@ -83,7 +186,7 @@ function RemoteAnalytics(config) {
 
         this.sessions[this.sessions.length - 1].end_time = Math.round(Date.now() / 1000);
 
-        $.ajax({
+        jQuery.ajax({
             url: this.apiUrl + '/devices/' + this.deviceId,
             method: 'POST',
             data: {
@@ -102,4 +205,8 @@ function RemoteAnalytics(config) {
             }
         });
     }
-;
+};
+
+if (module !== undefined) {
+    module.exports = RemoteAnalytics;
+}
