@@ -208,7 +208,7 @@ RemoteAnalytics = {
             },
             headers: {
                 'Authorization': this.token,
-                'Content-Type': 'x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded'
             },
             success: function () {
                 callbackAfterPost();
