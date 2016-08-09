@@ -40,6 +40,19 @@ RemoteAnalytics = {
             this.config[c] = config[c];
         }
     },
+    mergeObjects: function (obj1, obj2) {
+        var obj = {};
+
+        for (var o in obj1) {
+            obj[o] = obj1[o];
+        }
+
+        for (var o in obj2) {
+            obj[o] = obj2[o];
+        }
+
+        return obj;
+    },
     /**
      * Send API request
      * 
@@ -57,9 +70,7 @@ RemoteAnalytics = {
                 switch (request.status) {
                     case 200:
                     {
-                        for (var attr in res) {
-                            data[attr] = res[attr];
-                        }
+                        data = RemoteAnalytics.mergeObjects(data, res);
                         break;
                     }
                     default:
@@ -118,14 +129,17 @@ RemoteAnalytics = {
     /**
      * Login
      */
-    login: function (callback) {
+    login: function (callback, data) {
+        if (data === undefined) {
+            data = {};
+        }
         this.apiRequest({
             url: this.config.apiUrl + '/login',
             method: 'POST',
-            data: {
+            data: RemoteAnalytics.mergeObjects({
                 username: this.config.deviceId,
                 password: this.config.authKey
-            },
+            }, data),
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
