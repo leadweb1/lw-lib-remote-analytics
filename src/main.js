@@ -1,6 +1,6 @@
 'use strict';
 
-var RemoteAnalytics, module;
+var module, RemoteAnalytics;
 
 RemoteAnalytics = {
     /**
@@ -11,6 +11,10 @@ RemoteAnalytics = {
          * API endpoint to post data to
          */
         apiUrl: '',
+        /**
+         * API endpoint to post data to
+         */
+        socketUrl: '',
         /**
          * ID of the device posting data
          */
@@ -37,18 +41,24 @@ RemoteAnalytics = {
     init: function (config) {
         //jQuery.extend(this.config, config);
         for (var c in config) {
-            this.config[c] = config[c];
+            if(config.hasOwnProperty(c)) {
+                this.config[c] = config[c];
+            }
         }
     },
     mergeObjects: function (obj1, obj2) {
         var obj = {};
 
-        for (var o in obj1) {
-            obj[o] = obj1[o];
+        for (var o1 in obj1) {
+            if(obj1.hasOwnProperty(o1)) {
+                obj[o1] = obj1[o1];
+            }
         }
 
-        for (var o in obj2) {
-            obj[o] = obj2[o];
+        for (var o2 in obj2) {
+            if(obj2.hasOwnProperty(o2)) {
+                obj[o2] = obj2[o2];
+            }
         }
 
         return obj;
@@ -56,7 +66,7 @@ RemoteAnalytics = {
     /**
      * Send API request
      * 
-     * @param object conf
+     * @param conf
      * @returns void
      */
     apiRequest: function (conf) {
@@ -79,7 +89,6 @@ RemoteAnalytics = {
                         break;
                     }
                 }
-                ;
                 if (conf.callback !== undefined) {
                     conf.callback(data);
                 }
@@ -92,18 +101,22 @@ RemoteAnalytics = {
         // Set request headers
         if (conf.headers !== undefined) {
             for (var h in conf.headers) {
-                var header = conf.headers[h];
-                request.setRequestHeader(h, header);
+                if(conf.headers.hasOwnProperty(h)) {
+                    var header = conf.headers[h];
+                    request.setRequestHeader(h, header);
+                }
             }
         }
 
         // Serialize data
         var data = '';
         for (var d in conf.data) {
-            if (data.length > 0) {
-                data += '&';
+            if(conf.data.hasOwnProperty(d)) {
+                if (data.length > 0) {
+                    data += '&';
+                }
+                data += d + '=' + conf.data[d];
             }
-            data += d + '=' + conf.data[d];
         }
 
         // Send request
@@ -212,7 +225,7 @@ RemoteAnalytics = {
             },
             success: function () {
                 callbackAfterPost();
-                this.sessions = [];
+                RemoteAnalytics.sessions = [];
             },
             error: function () {
                 callbackAfterPost();
