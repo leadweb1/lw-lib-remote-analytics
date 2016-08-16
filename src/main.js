@@ -20,10 +20,22 @@ RemoteAnalytics = {
          */
         deviceId: 'device-id',
         /**
+         * Name of the device
+         */
+        deviceName: 'device-name',
+        /**
+         * IP address of the device
+         */
+        deviceIp: '1.2.3.4',
+        /**
          * ID of the project for which data is posted
          * Generated when creating an app in the backend
          */
-        projectId: 'project-id'
+        projectId: 'project-id',
+        /**
+         * Ping interval (in seconds)
+         */
+        pingInterval: 60
     },
     /**
      * Sessions data
@@ -34,18 +46,65 @@ RemoteAnalytics = {
      */
     token: null,
     /**
+     * Socket object
+     */
+    socket: null,
+    /**
+     * Keepaline ping timer
+     */
+    pingTimer: null,
+    /**
+     * Connection flag
+     */
+    connected: false,
+    /**
      * Initialize configuration
      *
      * @param config
+     * @param socket
      */
-    init: function (config) {
+    init: function (config, socket) {
         //jQuery.extend(this.config, config);
         for (var c in config) {
             if(config.hasOwnProperty(c)) {
                 this.config[c] = config[c];
             }
         }
+
+        this.socket = socket;
+
+        this.socket.on('connect', function(){
+            RemoteAnalytics.connected = true;
+
+            if(!this.token) {
+                RemoteAnalytics.login(function(response){
+                    if(response.error !== undefined) {
+                        alert(response.error);
+                    }
+                    else {
+                        RemoteAnalytics.ping();
+
+                        RemoteAnalytics.pingTimer = setInterval(function(){
+                            RemoteAnalytics.ping();
+                        }, RemoteAnalytics.config.pingInterval * 1000); // Ping every 60 seconds
+                    }
+                });
+            }
+        });
+        this.socket.on('disconnect', function(){
+            RemoteAnalytics.connected = false;
+            RemoteAnalytics.socket.emit('socket:disconnect', {
+                device: RemoteAnalytics.config.deviceId
+            });
+        });
     },
+    /**
+     * Merge objects
+     *
+     * @param obj1
+     * @param obj2
+     * @returns {{}}
+     */
     mergeObjects: function (obj1, obj2) {
         var obj = {};
 
@@ -62,6 +121,24 @@ RemoteAnalytics = {
         }
 
         return obj;
+    },
+    /**
+     * Returns formatted date
+     *
+     * @returns {string}
+     */
+    getDate: function() {
+        var date = new Date();
+        return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+    },
+    /**
+     * Ping socket server
+     */
+    ping: function() {
+        console.log('ping');
+        this.socket.emit('socket:ping', {
+            device: this.config.deviceId
+        });
     },
     /**
      * Send API request
@@ -109,18 +186,29 @@ RemoteAnalytics = {
         }
 
         // Serialize data
-        var data = '';
-        for (var d in conf.data) {
-            if(conf.data.hasOwnProperty(d)) {
-                if (data.length > 0) {
-                    data += '&';
-                }
-                data += d + '=' + conf.data[d];
-            }
-        }
+        var data = this.serialize(conf.data);
 
         // Send request
         request.send(data);
+    },
+    /**
+     * Serialize an object into a query string
+     *
+     * @param obj
+     * @param prefix
+     * @returns {string}
+     */
+    serialize: function(obj, prefix) {
+        var str = [];
+        for(var p in obj) {
+            if (obj.hasOwnProperty(p)) {
+                var k = prefix ? prefix + "[" + p + "]" : p, v = obj[p];
+                str.push(typeof v == "object" ?
+                    this.serialize(v, k) :
+                encodeURIComponent(k) + "=" + encodeURIComponent(v));
+            }
+        }
+        return str.join("&");
     },
     /**
      * 
@@ -141,6 +229,9 @@ RemoteAnalytics = {
     },
     /**
      * Login
+     *
+     * @param callback
+     * @param data
      */
     login: function (callback, data) {
         if (data === undefined) {
@@ -149,8 +240,8 @@ RemoteAnalytics = {
         this.apiRequest({
             url: this.config.apiUrl + '/login',
             method: 'POST',
-            data: RemoteAnalytics.mergeObjects({
-                username: this.config.deviceId,
+            data: this.mergeObjects({
+                username: this.config.deviceName,
                 password: this.config.authKey
             }, data),
             headers: {
@@ -159,6 +250,16 @@ RemoteAnalytics = {
             callback: function (response) {
                 if (response.token !== undefined) {
                     RemoteAnalytics.token = response.token;
+                    RemoteAnalytics.config.deviceId = response.user_id;
+                    RemoteAnalytics.config.ip = response.ip;
+
+                    if(RemoteAnalytics.sessions.length > 0) {
+                        for(var s in RemoteAnalytics.sessions) {
+                            if(RemoteAnalytics.sessions.hasOwnProperty(s)) {
+                                RemoteAnalytics.sessions[s].ip = RemoteAnalytics.config.ip;
+                            }
+                        }
+                    }
                 }
                 callback(response);
             }
@@ -172,16 +273,13 @@ RemoteAnalytics = {
      * @param extra
      * @returns {Number}
      */
-    logAction: function (name, value, extra) {
+    logAction: function (data) {
         if (this.sessions.length < 1) {
             this.submissionStart();
         }
-        var action = {
-            name: name,
-            value: value,
-            extra: extra,
-            time: Math.round(Date.now() / 1000)
-        };
+        var action = this.mergeObjects(data, {
+            time: this.getDate()
+        });
         return this.sessions[this.sessions.length - 1].actions.push(action);
     },
     /**
@@ -190,8 +288,9 @@ RemoteAnalytics = {
     submissionStart: function () {
         var session = {
             'story': this.config.projectId,
-            'start_time': Math.round(Date.now() / 1000),
+            'start_time': this.getDate(),
             'end_time': 0,
+            'ip': this.config.ip,
             'actions': []
         };
         this.sessions.push(session);
@@ -205,29 +304,38 @@ RemoteAnalytics = {
      * @param callbackAfterPost
      */
     submissionEnd: function (callbackNoSessions, callbackAfterPost) {
+        if(callbackNoSessions === undefined) {
+            callbackNoSessions = function() {};
+        }
+
+        if(callbackAfterPost === undefined) {
+            callbackAfterPost = function() {};
+        }
+
         if (this.sessions.length < 1) {
             this.sessions = [];
             callbackNoSessions();
             return;
         }
 
-        this.sessions[this.sessions.length - 1].end_time = Math.round(Date.now() / 1000);
-
-        jQuery.ajax({
-            url: this.apiUrl + '/devices/' + this.deviceId,
+        this.sessions[this.sessions.length - 1].end_time = this.getDate();
+        this.apiRequest({
+            url: this.config.apiUrl + '/devices/' + this.config.deviceId,
             method: 'POST',
             data: {
                 sessions: this.sessions
             },
             headers: {
-                'Authorization': this.token,
+                'X-AUTH-TOKEN': this.token,
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            success: function () {
-                callbackAfterPost();
-                RemoteAnalytics.sessions = [];
-            },
-            error: function () {
+            callback: function (response) {
+                if(response.error) {
+                    alert(response.error);
+                }
+                else {
+                    RemoteAnalytics.sessions = [];
+                }
                 callbackAfterPost();
             }
         });
