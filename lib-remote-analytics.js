@@ -92,7 +92,7 @@ RemoteAnalytics = {
             if(!this.token) {
                 RemoteAnalytics.login(function(response){
                     if(response.error !== undefined) {
-                        alert(response.error);
+                        console.log(response.error);
                     }
                     else {
                         RemoteAnalytics.ping();
@@ -148,7 +148,6 @@ RemoteAnalytics = {
      * Ping socket server
      */
     ping: function() {
-        console.log('ping');
         this.socket.emit('socket:ping', {
             device: this.config.deviceId
         });
@@ -160,49 +159,54 @@ RemoteAnalytics = {
      * @returns void
      */
     apiRequest: function (conf) {
-        var request = new XMLHttpRequest;
+        if(this.connected) {
+            var request = new XMLHttpRequest;
 
-        // Handle response
-        request.onreadystatechange = function () {
-            if (4 === request.readyState) {
-                var res = JSON.parse(request.responseText);
-                var data = {};
-                switch (request.status) {
-                    case 200:
-                    {
-                        data = RemoteAnalytics.mergeObjects(data, res);
-                        break;
+            // Handle response
+            request.onreadystatechange = function () {
+                if (4 === request.readyState) {
+                    var res = JSON.parse(request.responseText);
+                    var data = {};
+                    switch (request.status) {
+                        case 200: {
+                            data = RemoteAnalytics.mergeObjects(data, res);
+                            break;
+                        }
+                        default: {
+                            data.error = res.error;
+                            break;
+                        }
                     }
-                    default:
-                    {
-                        data.error = res.error;
-                        break;
+                    if (conf.callback !== undefined) {
+                        conf.callback(data);
                     }
                 }
-                if (conf.callback !== undefined) {
-                    conf.callback(data);
+            };
+
+            // Create request
+            request.open(conf.method, conf.url);
+
+            // Set request headers
+            if (conf.headers !== undefined) {
+                for (var h in conf.headers) {
+                    if (conf.headers.hasOwnProperty(h)) {
+                        var header = conf.headers[h];
+                        request.setRequestHeader(h, header);
+                    }
                 }
             }
-        };
 
-        // Create request
-        request.open(conf.method, conf.url);
+            // Serialize data
+            var data = this.serialize(conf.data);
 
-        // Set request headers
-        if (conf.headers !== undefined) {
-            for (var h in conf.headers) {
-                if(conf.headers.hasOwnProperty(h)) {
-                    var header = conf.headers[h];
-                    request.setRequestHeader(h, header);
-                }
-            }
+            // Send request
+            request.send(data);
         }
-
-        // Serialize data
-        var data = this.serialize(conf.data);
-
-        // Send request
-        request.send(data);
+        else {
+            conf.callback({
+                error: 'No connection available'
+            });
+        }
     },
     /**
      * Serialize an object into a query string
@@ -343,8 +347,9 @@ RemoteAnalytics = {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             callback: function (response) {
-                if(response.error) {
-                    alert(response.error);
+                if (response.error) {
+                    console.log(response.error);
+                    RemoteAnalytics.submissionStart();
                 }
                 else {
                     RemoteAnalytics.sessions = [];
