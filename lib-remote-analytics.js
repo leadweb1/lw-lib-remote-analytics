@@ -9,27 +9,40 @@ RemoteAnalytics = {
     config: {
         /**
          * API endpoint to post data to
+         *
+         * Needs to be set in config file
          */
         apiUrl: '',
         /**
          * API endpoint to post data to
+         *
+         * Needs to be set in config file
          */
         socketUrl: '',
         /**
          * ID of the device posting data
+         *
+         * Will be set from login response
          */
         deviceId: 'device-id',
         /**
          * Name of the device
+         *
+         * Needs to be set in config file
          */
         deviceName: 'device-name',
         /**
          * IP address of the device
+         *
+         * Will be set from login response
          */
         deviceIp: '1.2.3.4',
         /**
          * ID of the project for which data is posted
-         * Generated when creating an app in the backend
+         *
+         * Needs to be set in config file
+         *
+         * Generated when creating an app in the manager (slug of the project name)
          */
         projectId: 'project-id',
         /**
