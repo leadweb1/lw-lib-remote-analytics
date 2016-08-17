@@ -4,8 +4,18 @@
  * and open the template in the editor.
  */
 
-var gulp = require('gulp');
+var gulp = require('gulp'),
+    uglify = require('gulp-uglify'),
+    rename = require('gulp-rename');
 
-gulp.task('default', function () {
-    // place code for your default task here
+gulp.task('scripts', function() {
+    return gulp.src('lib-remote-analytics.js')
+        .pipe(rename('lib-remote-analytics.min.js'))
+        .pipe(uglify({
+            preserveComments: 'some',
+            outSourceMap: true
+        }))
+        .pipe(gulp.dest('.'));
 });
+
+gulp.task('default', ['scripts']);

@@ -10,5 +10,13 @@
     "keywords": ["util", "functional", "server", "client", "browser"],
     "author": "Lead-Web <info@lead-web.com>",
     "contributors": [],
-    "dependencies": {}
+    "dependencies": {},
+    "devDependencies": {
+        "gulp": "^3.8.10",
+        "gulp-rename": "~1.2.0",
+        "gulp-uglify": "~0.2.1",
+        "karma": "~0.10.2",
+        "karma-firefox-launcher": "~0.1.0",
+        "karma-jasmine": "~0.1.3"
+    }
 }
