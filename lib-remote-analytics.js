@@ -44,11 +44,7 @@ RemoteAnalytics = {
          *
          * Generated when creating an app in the manager (slug of the project name)
          */
-        projectId: 'project-id',
-        /**
-         * Ping interval (in seconds)
-         */
-        pingInterval: 60
+        projectId: 'project-id'
     },
     /**
      * Sessions data
@@ -70,6 +66,10 @@ RemoteAnalytics = {
      * Connection flag
      */
     connected: false,
+    /**
+     * Ping interval (in seconds)
+     */
+    pingInterval: 60,
     /**
      * Initialize configuration
      *
@@ -99,7 +99,7 @@ RemoteAnalytics = {
 
                         RemoteAnalytics.pingTimer = setInterval(function(){
                             RemoteAnalytics.ping();
-                        }, RemoteAnalytics.config.pingInterval * 1000); // Ping every 60 seconds
+                        }, RemoteAnalytics.pingInterval * 1000); // Ping every 60 seconds
                     }
                 });
             }
