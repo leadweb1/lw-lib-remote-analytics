@@ -49,6 +49,13 @@ RemoteAnalytics = {
          * Ping interval (in seconds)
          */
         pingInterval: 60,
+        /**
+         * Enable keepaline
+         *
+         * If might be desirable to disable keepalive
+         * for client mobile apps that are not always on
+         */
+        doKeepAline: true
     },
     /**
      * Sessions data
@@ -99,11 +106,13 @@ RemoteAnalytics = {
                         console.log(response.error);
                     }
                     else {
-                        RemoteAnalytics.ping();
-
-                        RemoteAnalytics.pingTimer = setInterval(function(){
+                        if(RemoteAnalytics.config.doKeepAline) {
                             RemoteAnalytics.ping();
-                        }, RemoteAnalytics.config.pingInterval * 1000); // Ping every 60 seconds
+
+                            RemoteAnalytics.pingTimer = setInterval(function () {
+                                RemoteAnalytics.ping();
+                            }, RemoteAnalytics.config.pingInterval * 1000); // Ping every 60 seconds
+                        }
                     }
                 });
             }
