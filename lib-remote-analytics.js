@@ -59,6 +59,10 @@ RemoteAnalytics = {
      */
     socket: null,
     /**
+     * ID of the socket
+     */
+    socketClientId: null,
+    /**
      * Keepaline ping timer
      */
     pingTimer: null,
@@ -104,10 +108,13 @@ RemoteAnalytics = {
                 });
             }
         });
+        this.socket.on('socket-client-id', function(response){
+            RemoteAnalytics.socketClientId = response.id;
+        });
         this.socket.on('disconnect', function(){
             RemoteAnalytics.connected = false;
             RemoteAnalytics.socket.emit('socket:disconnect', {
-                device: RemoteAnalytics.config.deviceId
+                device: RemoteAnalytics.socketClientId
             });
         });
     },
@@ -149,7 +156,8 @@ RemoteAnalytics = {
      */
     ping: function() {
         this.socket.emit('socket:ping', {
-            device: this.config.deviceId
+            device: this.config.deviceId,
+            socket: this.socketClientId
         });
     },
     /**
