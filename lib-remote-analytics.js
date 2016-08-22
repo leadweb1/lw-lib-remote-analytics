@@ -282,9 +282,9 @@ RemoteAnalytics = {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             callback: function (response) {
-                if (response.token !== undefined) {
-                    RemoteAnalytics.token = response.token;
-                    RemoteAnalytics.config.deviceId = response.user_id;
+                if (response.profile !== undefined) {
+                    RemoteAnalytics.token = response.profile.api_key;
+                    RemoteAnalytics.config.deviceId = response.profile.id;
                     RemoteAnalytics.config.ip = response.ip;
 
                     if(RemoteAnalytics.sessions.length > 0) {
