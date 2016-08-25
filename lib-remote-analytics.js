@@ -213,36 +213,14 @@ RemoteAnalytics = {
                 }
             }
 
-            // Serialize data
-            var data = this.serialize(conf.data);
-
             // Send request
-            request.send(data);
+            request.send(JSON.stringify(conf.data));
         }
         else {
             conf.callback({
                 error: 'No connection available'
             });
         }
-    },
-    /**
-     * Serialize an object into a query string
-     *
-     * @param obj
-     * @param prefix
-     * @returns {string}
-     */
-    serialize: function(obj, prefix) {
-        var str = [];
-        for(var p in obj) {
-            if (obj.hasOwnProperty(p)) {
-                var k = prefix ? prefix + "[" + p + "]" : p, v = obj[p];
-                str.push(typeof v == "object" ?
-                    this.serialize(v, k) :
-                encodeURIComponent(k) + "=" + encodeURIComponent(v));
-            }
-        }
-        return str.join("&");
     },
     /**
      * 
@@ -279,7 +257,7 @@ RemoteAnalytics = {
                 password: this.config.authKey
             }, data),
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/json'
             },
             callback: function (response) {
                 if (response.profile !== undefined) {
@@ -361,7 +339,7 @@ RemoteAnalytics = {
             },
             headers: {
                 'X-AUTH-TOKEN': this.token,
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/json'
             },
             callback: function (response) {
                 if (response.error) {
