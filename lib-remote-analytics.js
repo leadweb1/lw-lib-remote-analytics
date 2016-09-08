@@ -336,7 +336,7 @@ RemoteAnalytics = {
 
         this.sessions[this.sessions.length - 1].end_time = this.getDate();
         this.apiRequest({
-            url: this.config.apiUrl + '/devices/' + this.config.deviceId,
+            url: this.config.apiUrl + '/devices/' + this.config.deviceId + '/sessions',
             method: 'POST',
             data: {
                 sessions: this.sessions
