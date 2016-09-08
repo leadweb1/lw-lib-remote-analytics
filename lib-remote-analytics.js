@@ -18,7 +18,7 @@ RemoteAnalytics = {
          *
          * Needs to be set in config file
          */
-        socketUrl: '',
+        socketUrl: null,
         /**
          * ID of the device posting data
          *
@@ -95,37 +95,39 @@ RemoteAnalytics = {
             }
         }
 
-        this.socket = socket;
+        if(socket !== null) {
+            this.socket = socket;
 
-        this.socket.on('connect', function(){
-            RemoteAnalytics.connected = true;
+            this.socket.on('connect', function () {
+                RemoteAnalytics.connected = true;
 
-            if(!this.token) {
-                RemoteAnalytics.login(function(response){
-                    if(response.error !== undefined) {
-                        console.log(response.error);
-                    }
-                    else {
-                        if(RemoteAnalytics.config.doKeepAline) {
-                            RemoteAnalytics.ping();
-
-                            RemoteAnalytics.pingTimer = setInterval(function () {
-                                RemoteAnalytics.ping();
-                            }, RemoteAnalytics.config.pingInterval * 1000); // Ping every 60 seconds
+                if (!this.token) {
+                    RemoteAnalytics.login(function (response) {
+                        if (response.error !== undefined) {
+                            console.log(response.error);
                         }
-                    }
-                });
-            }
-        });
-        this.socket.on('socket-client-id', function(response){
-            RemoteAnalytics.socketClientId = response.id;
-        });
-        this.socket.on('disconnect', function(){
-            RemoteAnalytics.connected = false;
-            RemoteAnalytics.socket.emit('socket:disconnect', {
-                device: RemoteAnalytics.socketClientId
+                        else {
+                            if (RemoteAnalytics.config.doKeepAline) {
+                                RemoteAnalytics.ping();
+
+                                RemoteAnalytics.pingTimer = setInterval(function () {
+                                    RemoteAnalytics.ping();
+                                }, RemoteAnalytics.config.pingInterval * 1000); // Ping every 60 seconds
+                            }
+                        }
+                    });
+                }
             });
-        });
+            this.socket.on('socket-client-id', function (response) {
+                RemoteAnalytics.socketClientId = response.id;
+            });
+            this.socket.on('disconnect', function () {
+                RemoteAnalytics.connected = false;
+                RemoteAnalytics.socket.emit('socket:disconnect', {
+                    device: RemoteAnalytics.socketClientId
+                });
+            });
+        }
     },
     /**
      * Merge objects
@@ -164,10 +166,12 @@ RemoteAnalytics = {
      * Ping socket server
      */
     ping: function() {
-        this.socket.emit('socket:ping', {
-            device: this.config.deviceId,
-            socket: this.socketClientId
-        });
+        if(this.socket !== null) {
+            this.socket.emit('socket:ping', {
+                device: this.config.deviceId,
+                socket: this.socketClientId
+            });
+        }
     },
     /**
      * Send API request
