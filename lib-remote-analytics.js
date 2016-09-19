@@ -273,6 +273,10 @@ RemoteAnalytics = {
                         }
                     }
                 }
+                else {
+                    var event = new CustomEvent('login-failed');
+                    document.dispatchEvent(event);
+                }
                 callback(response);
             }
         });
@@ -329,6 +333,8 @@ RemoteAnalytics = {
             callbackNoSessions();
             return;
         }
+
+
 
         this.sessions[this.sessions.length - 1].end_time = this.getDate();
         this.apiRequest({
