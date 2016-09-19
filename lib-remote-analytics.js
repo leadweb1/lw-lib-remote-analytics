@@ -50,12 +50,12 @@ RemoteAnalytics = {
          */
         pingInterval: 60,
         /**
-         * Enable keepaline
+         * Enable keepalive
          *
          * If might be desirable to disable keepalive
          * for client mobile apps that are not always on
          */
-        doKeepAline: true
+        doKeepAlive: true
     },
     /**
      * Sessions data
@@ -74,7 +74,7 @@ RemoteAnalytics = {
      */
     socketClientId: null,
     /**
-     * Keepaline ping timer
+     * Keepalive ping timer
      */
     pingTimer: null,
     /**
@@ -106,7 +106,7 @@ RemoteAnalytics = {
                         console.log(response.error);
                     }
                     else {
-                        if(RemoteAnalytics.config.doKeepAline) {
+                        if(RemoteAnalytics.config.doKeepAlive) {
                             RemoteAnalytics.ping();
 
                             RemoteAnalytics.pingTimer = setInterval(function () {
