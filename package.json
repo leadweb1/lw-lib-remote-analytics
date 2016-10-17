@@ -5,7 +5,7 @@
         "Lead-Web <info@lead-web.com>"
     ],
     "description": "Remote Analitycs Library",
-    "main": "main.js",
+    "main": "lib-remote-analytics.js",
     "title": "Remote Analitycs Library",
     "keywords": ["util", "functional", "server", "client", "browser"],
     "author": "Lead-Web <info@lead-web.com>",
