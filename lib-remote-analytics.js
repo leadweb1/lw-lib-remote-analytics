@@ -100,6 +100,10 @@ RemoteAnalytics = {
         this.socket.on('connect', function(){
             RemoteAnalytics.connected = true;
 
+            if(RemoteAnalytics.pingTimer) {
+                clearInterval(RemoteAnalytics.pingTimer);
+            }
+
             if(!this.token) {
                 RemoteAnalytics.login(function(response){
                     if(response.error !== undefined) {
