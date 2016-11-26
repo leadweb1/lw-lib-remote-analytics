@@ -97,7 +97,7 @@ RemoteAnalytics = {
 
         this.socket = socket;
 
-        if(this.socket !== undefined) {
+        if(this.socket !== undefined && this.socket !== null) {
             this.socket.on('connect', function () {
                 RemoteAnalytics.connected = true;
 
